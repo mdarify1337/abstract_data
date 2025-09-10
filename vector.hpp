@@ -13,7 +13,6 @@ namespace ft
     class vector
     {
     public:
-    public:
         typedef T value_type;
         typedef Alloc allocator_type;
         typedef typename Alloc::size_type size_type;
