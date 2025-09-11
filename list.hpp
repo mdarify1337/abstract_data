@@ -302,7 +302,7 @@ namespace ft
             if (first == last)
                 return;
 
-            Node *next_node = position.node;
+            Node *next_node = position.base();
             Node *prev_node = next_node ? next_node->prev : tail;
             Node *first_new = nullptr;
             Node *last_new = nullptr;
@@ -313,14 +313,11 @@ namespace ft
                 node_alloc.construct(node, Node(*it));
                 node->prev = prev_node;
                 node->next = nullptr;
-
                 if (prev_node)
                     prev_node->next = node;
                 else
                     first_new = node;
-
                 prev_node = node;
-
                 if (!first_new)
                     first_new = node;
                 last_new = node;
@@ -351,14 +348,14 @@ namespace ft
                 head = tail = node;
                 node->prev = node->next = nullptr;
             }
-            else if (position.node == head)
+            else if (position.base() == head)
             {
                 node->next = head;
                 node->prev = nullptr;
                 head->prev = node;
                 head = node;
             }
-            else if (position.node == nullptr)
+            else if (position.base() == nullptr)
             {
                 node->prev = tail;
                 node->next = nullptr;
@@ -367,7 +364,7 @@ namespace ft
             }
             else
             {
-                Node *next_node = position.node;
+                Node *next_node = position.base();
                 Node *prev_node = next_node->prev;
                 node->prev = prev_node;
                 node->next = next_node;
@@ -386,7 +383,7 @@ namespace ft
             if (n == 0)
                 return;
 
-            Node *next_node = position.node;
+            Node *next_node = position.base();
             Node *prev_node = next_node ? next_node->prev : tail;
 
             for (size_type i = 0; i < n; ++i)
@@ -415,12 +412,6 @@ namespace ft
             }
 
             _size += n;
-        }
-
-        void insert(
-
-        )
-        {
         }
 
         void emplace_front(const value_type &val)
@@ -509,15 +500,371 @@ namespace ft
             _size--;
         }
 
-        void emplace() {}
+        void emplace(
+            iterator position,
+            const value_type &value)
+        {
+            insert(position, value);
+        }
+
+        iterator erase(iterator position)
+        {
+            Node *node = position.base();
+            if (!node)
+                return end();
+
+            Node *prev_node = node->prev;
+            Node *next_node = node->next;
+            if (prev_node)
+                prev_node->next = next_node;
+            else
+                head = next_node;
+            if (next_node)
+                next_node->prev = prev_node;
+            else
+                tail = prev_node;
+            node_alloc.destroy(node);
+            node_alloc.deallocate(node, 1);
+            --_size;
+            return iterator(next_node);
+        }
+
+        iterator erase(
+            iterator first,
+            iterator last)
+        {
+            while (first != last)
+            {
+                std::cout << "first ==> " << *first << std::endl;
+                first = erase(first);
+            }
+            return last;
+        }
+
+        void swap(list &other)
+        {
+            Node *tmp_head = head;
+            head = other.head;
+            other.head = tmp_head;
+            Node *tmp_tail = tail;
+            tail = other.tail;
+            other.tail = tmp_tail;
+            size_t tmp_size = _size;
+            _size = other._size;
+            other._size = tmp_size;
+            std::swap(node_alloc, other.node_alloc);
+        }
+
+        void resize(size_t new_size, const T &value = T())
+        {
+            if (new_size < _size)
+                while (_size > new_size)
+                    erase(--end());
+            else if (new_size > _size)
+                while (_size < new_size)
+                    push_back(value);
+        }
 
         allocator_type get_allocator() const
         {
             return _alloc;
         }
+
+        void splice(iterator pos, list &other)
+        {
+            if (other.empty())
+                return;
+
+            Node *before = pos.base() ? pos.base()->prev : tail;
+            if (before)
+            {
+                before->next = other.head;
+                other.head->prev = before;
+            }
+            else
+            {
+                head = other.head;
+            }
+
+            if (pos.base())
+            {
+                pos.base()->prev = other.tail;
+                other.tail->next = pos.base();
+            }
+            else
+            {
+                tail = other.tail;
+            }
+
+            _size += other._size;
+            other.head = other.tail = 0;
+            other._size = 0;
+        }
+
+        void splice(iterator pos, list &other, iterator it)
+        {
+            Node *node = it.base();
+            if (!node)
+                return;
+            if (node->prev)
+                node->prev->next = node->next;
+            else
+                other.head = node->next;
+
+            if (node->next)
+                node->next->prev = node->prev;
+            else
+                other.tail = node->prev;
+
+            --other._size;
+
+            Node *before = pos.base() ? pos.base()->prev : tail;
+
+            node->prev = before;
+            node->next = pos.base();
+
+            if (before)
+                before->next = node;
+            else
+                head = node;
+
+            if (pos.base())
+                pos.base()->prev = node;
+            else
+                tail = node;
+
+            ++_size;
+        }
+
+        void splice(iterator pos, list &other, iterator first, iterator last)
+        {
+            if (first == last)
+                return;
+            Node *first_node = first.base();
+            Node *last_node = last.base() ? last.base()->prev : other.tail;
+
+            Node *before_first = first_node->prev;
+            Node *after_last = last_node->next;
+
+            if (before_first)
+                before_first->next = after_last;
+            else
+                other.head = after_last;
+
+            if (after_last)
+                after_last->prev = before_first;
+            else
+                other.tail = before_first;
+            size_t count = 0;
+            for (Node *n = first_node; n != after_last; n = n->next)
+                ++count;
+
+            other._size -= count;
+            Node *before = pos.base() ? pos.base()->prev : tail;
+
+            first_node->prev = before;
+            last_node->next = pos.base();
+
+            if (before)
+                before->next = first_node;
+            else
+                head = first_node;
+
+            if (pos.base())
+                pos.base()->prev = last_node;
+            else
+                tail = last_node;
+
+            _size += count;
+        }
+
+        void remove(const value_type &value)
+        {
+            iterator it = begin();
+            while (it != end())
+            {
+                if (*it == value)
+                    it = erase(it);
+                else
+                    ++it;
+            }
+        }
+
+        template <class Predicate>
+        void remove_if(Predicate pred)
+        {
+            iterator it = begin();
+            while (it != end())
+            {
+                if (pred(*it))
+                    it = erase(it);
+                else
+                    ++it;
+            }
+        }
+
+        void unique()
+        {
+            if (empty())
+                return;
+
+            iterator first = begin();
+            iterator next = first;
+            ++next;
+            while (next != end())
+            {
+                if (*first == *next)
+                    next = erase(next);
+                else
+                {
+                    first = next;
+                    ++next;
+                }
+            }
+        }
+
+        template <class BinaryPredicate>
+        void unique(BinaryPredicate pred)
+        {
+            if (empty())
+                return;
+            iterator first = begin();
+            iterator next = first;
+            ++next;
+            while (next != end())
+            {
+                if (pred(*first, *next))
+                    next = erase(next);
+                else
+                {
+                    first = next;
+                    ++next;
+                }
+            }
+        }
+
+        void sort()
+        {
+            sort(std::less<value_type>());
+        }
+
+        Node *split(Node *head)
+        {
+            Node *fast = head;
+            Node *slow = head;
+            while (fast->next && fast->next->next)
+            {
+                fast = fast->next->next;
+                slow = slow->next;
+            }
+            Node *second = slow->next;
+            slow->next = 0;
+            if (second)
+                second->prev = 0;
+            return second;
+        }
+
+        template <class Compare>
+        Node *merge(Node *first, Node *second, Compare comp)
+        {
+            if (!first)
+                return second;
+            if (!second)
+                return first;
+
+            if (comp(second->value, first->value))
+            {
+                second->next = merge(first, second->next, comp);
+                if (second->next)
+                    second->next->prev = second;
+                second->prev = 0;
+                return second;
+            }
+            else
+            {
+                first->next = merge(first->next, second, comp);
+                if (first->next)
+                    first->next->prev = first;
+                first->prev = 0;
+                return first;
+            }
+        }
+
+        template <class Compare>
+        Node *merge_sort(Node *node, Compare comp)
+        {
+            if (!node || !node->next)
+                return node;
+
+            Node *second = split(node);
+
+            node = merge_sort(node, comp);
+            second = merge_sort(second, comp);
+
+            return merge(node, second, comp);
+        }
+
+        template <class Compare>
+        void sort(Compare comp)
+        {
+            if (_size < 2)
+                return;
+            head = merge_sort(head, comp);
+            tail = head;
+            while (tail && tail->next)
+                tail = tail->next;
+        }
+
+        void merge(list &other)
+        {
+            if (this == &other)
+                return;
+            iterator it1 = begin();
+            iterator it2 = other.begin();
+            while (it1 != end() && it2 != other.end())
+            {
+                if (*it2 < *it1)
+                {
+                    iterator next = it2;
+                    ++next;
+                    splice(it1, other, it2);
+                    it2 = next;
+                }
+                else
+                    ++it1;
+            }
+            if (it2 != other.end())
+                splice(end(), other, it2, other.end());
+        }
+
+        template <class Compare>
+        void merge(list &other, Compare comp)
+        {
+            if (this == &other)
+                return;
+            iterator it1 = begin();
+            iterator it2 = other.begin();
+            while (it1 != end() && it2 != other.end())
+            {
+                if (comp(*it2, *it1))
+                {
+                    iterator next = it2;
+                    ++next;
+                    splice(it1, other, it2);
+                    it2 = next;
+                }
+                else
+                    ++it1;
+            }
+            if (it2 != other.end())
+                splice(end(), other, it2, other.end());
+        }
     };
+
     template <typename T, class Alloc>
-    bool operator==(const list<T, Alloc> &lhs, const list<T, Alloc> &rhs)
+    bool operator==(
+        const list<T, Alloc> &lhs,
+        const list<T, Alloc> &rhs)
     {
         if (lhs.size() != rhs.size())
             return false;
@@ -532,38 +879,44 @@ namespace ft
     }
 
     template <typename T, class Alloc>
-    bool operator!=(const list<T, Alloc> &lhs, const list<T, Alloc> &rhs)
+    bool operator!=(
+        const list<T, Alloc> &lhs,
+        const list<T, Alloc> &rhs)
     {
         return !(lhs == rhs);
     }
 
     template <typename T, class Alloc>
-    bool operator<(const list<T, Alloc> &lhs, const list<T, Alloc> &rhs)
+    bool operator<(
+        const list<T, Alloc> &lhs,
+        const list<T, Alloc> &rhs)
     {
-        return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+        return std::lexicographical_compare(lhs.begin(), lhs.end(),
+                                            rhs.begin(), rhs.end());
     }
 
     template <typename T, class Alloc>
-    bool operator>(const list<T, Alloc> &lhs, const list<T, Alloc> &rhs)
+    bool operator>(
+        const list<T, Alloc> &lhs,
+        const list<T, Alloc> &rhs)
     {
         return rhs < lhs;
     }
 
     template <typename T, class Alloc>
-    bool operator<=(const list<T, Alloc> &lhs, const list<T, Alloc> &rhs)
+    bool operator<=(
+        const list<T, Alloc> &lhs,
+        const list<T, Alloc> &rhs)
     {
         return !(rhs < lhs);
     }
 
     template <typename T, class Alloc>
-    bool operator>=(const list<T, Alloc> &lhs, const list<T, Alloc> &rhs)
+    bool operator>=(
+        const list<T, Alloc> &lhs,
+        const list<T, Alloc> &rhs)
     {
         return !(lhs < rhs);
     }
 
-    template <typename T, class Alloc>
-    void swap(list<T, Alloc> &lhs, list<T, Alloc> &rhs)
-    {
-        lhs.swap(rhs);
-    }
 }

@@ -322,18 +322,42 @@ namespace ft
         {
             return _alloc.max_size();
         }
-        size_type reserve() const
+        void resize(size_t new_size, const T &value = T())
         {
-            return _capacity;
+            if (new_size < _size)
+            {
+                for (size_t i = new_size; i < _size; ++i)
+                    _alloc.destroy(_data + i);
+                _size = new_size;
+            }
+            else if (new_size > _size)
+            {
+                if (new_size > _capacity)
+                    reserve(new_size);
+                for (size_t i = _size; i < new_size; ++i)
+                    _alloc.construct(_data + i, value);
+
+                _size = new_size;
+            }
         }
-        size_type resize() const
+
+        void shrink_to_fit()
         {
-            return _size;
+            if (_size < _capacity)
+            {
+                T *new_data = _alloc.allocate(_size);
+                for (size_t i = 0; i < _size; ++i)
+                {
+                    _alloc.construct(new_data + i, _data[i]);
+                    _alloc.destroy(_data + i);
+                }
+                if (_data)
+                    _alloc.deallocate(_data, _capacity);
+                _data = new_data;
+                _capacity = _size;
+            }
         }
-        size_type shrink_to_fit()
-        {
-            return _capacity = _size;
-        }
+
         bool empty() const
         {
             return _size == 0;
