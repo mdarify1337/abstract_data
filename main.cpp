@@ -101,6 +101,7 @@ int main()
 
     // --- 1. Fill constructor ---
     std::vector<int> std_v1(5, 42);
+    ft::vector<std::string> newstring;
     ft::vector<int> ft_v1(5, 42);
     compare_vectors(std_v1, ft_v1, "Fill constructor");
 
@@ -413,6 +414,38 @@ int main()
     // for (auto x, y : doublestd, doubleft)
     //     std::cout << x << " " <<;
     // std::cout << "\n";
+    // ft::list<std::string> newdouble;
+    // --- --- 18.sort --- ---
+    std_l1.sort();
+    ft_l1.sort();
+    compare_lists(std_l1, ft_l1, "compare two list after sort");
+    std_l1.sort(same_integral_part);
+    ft_l1.sort(same_integral_part);
+    compare_lists(std_l1, ft_l1, "compare two list after sort");
+
+    // --- --- 19.merge --- ---
+    std::list<int> std_newlist;
+    ft::list<int> ft_newlist;
+
+    std_newlist.push_back(2);
+    std_newlist.push_back(4);
+    std_newlist.push_back(6);
+
+    ft_newlist.push_back(2);
+    ft_newlist.push_back(4);
+    ft_newlist.push_back(6);
+
+    std_l1.merge(std_newlist);
+    ft_l1.merge(ft_newlist);
+
+    compare_lists(std_l1, ft_l1, "merge two lists after sort");
+
+    // --- --- reverse --- ---
+
+    std_l1.reverse();
+    ft_l1.reverse();
+     compare_lists(std_l1, ft_l1, "reverse two list after sort");
+
     std::cout << "\n===== TESTS COMPLETE =====\n";
     return 0;
 }

@@ -534,10 +534,7 @@ namespace ft
             iterator last)
         {
             while (first != last)
-            {
-                std::cout << "first ==> " << *first << std::endl;
                 first = erase(first);
-            }
             return last;
         }
 
@@ -745,63 +742,32 @@ namespace ft
 
         void sort()
         {
-            sort(std::less<value_type>());
-        }
+            if (_size < 2)
+                return;
 
-        Node *split(Node *head)
-        {
-            Node *fast = head;
-            Node *slow = head;
-            while (fast->next && fast->next->next)
+            list carry;
+            list counter[64];
+            int fill = 0;
+            while (!empty())
             {
-                fast = fast->next->next;
-                slow = slow->next;
+                carry.splice(carry.begin(), *this, begin());
+                int i = 0;
+                while (i < fill && !counter[i].empty())
+                {
+                    counter[i].merge(carry);
+                    carry.swap(counter[i]);
+                    ++i;
+                }
+                carry.swap(counter[i]);
+                if (i == fill)
+                    ++fill;
             }
-            Node *second = slow->next;
-            slow->next = 0;
-            if (second)
-                second->prev = 0;
-            return second;
-        }
 
-        template <class Compare>
-        Node *merge(Node *first, Node *second, Compare comp)
-        {
-            if (!first)
-                return second;
-            if (!second)
-                return first;
-
-            if (comp(second->value, first->value))
+            for (int i = 1; i < fill; ++i)
             {
-                second->next = merge(first, second->next, comp);
-                if (second->next)
-                    second->next->prev = second;
-                second->prev = 0;
-                return second;
+                counter[i].merge(counter[i - 1]);
             }
-            else
-            {
-                first->next = merge(first->next, second, comp);
-                if (first->next)
-                    first->next->prev = first;
-                first->prev = 0;
-                return first;
-            }
-        }
-
-        template <class Compare>
-        Node *merge_sort(Node *node, Compare comp)
-        {
-            if (!node || !node->next)
-                return node;
-
-            Node *second = split(node);
-
-            node = merge_sort(node, comp);
-            second = merge_sort(second, comp);
-
-            return merge(node, second, comp);
+            swap(counter[fill - 1]);
         }
 
         template <class Compare>
@@ -809,10 +775,31 @@ namespace ft
         {
             if (_size < 2)
                 return;
-            head = merge_sort(head, comp);
-            tail = head;
-            while (tail && tail->next)
-                tail = tail->next;
+
+            list carry;
+            list counter[64];
+            int fill = 0;
+
+            while (!empty())
+            {
+                carry.splice(carry.begin(), *this, begin());
+                int i = 0;
+                while (i < fill && !counter[i].empty())
+                {
+                    counter[i].merge(carry, comp);
+                    carry.swap(counter[i]);
+                    ++i;
+                }
+                carry.swap(counter[i]);
+                if (i == fill)
+                    ++fill;
+            }
+
+            for (int i = 1; i < fill; ++i)
+            {
+                counter[i].merge(counter[i - 1], comp);
+            }
+            swap(counter[fill - 1]);
         }
 
         void merge(list &other)
@@ -835,6 +822,26 @@ namespace ft
             }
             if (it2 != other.end())
                 splice(end(), other, it2, other.end());
+        }
+
+        void reverse()
+        {
+            if (_size <= 1)
+                return;
+
+            Node *current = head;
+            Node *tmp = 0;
+
+            while (current)
+            {
+                tmp = current->prev;
+                current->prev = current->next;
+                current->next = tmp;
+                current = current->prev; 
+            }
+            tmp = head;
+            head = tail;
+            tail = tmp;
         }
 
         template <class Compare>
