@@ -33,7 +33,6 @@ namespace ft
 
         private:
             pointer _ptr;
-
         public:
             iterator() : _ptr(NULL) {}
             explicit iterator(pointer p) : _ptr(p) {}

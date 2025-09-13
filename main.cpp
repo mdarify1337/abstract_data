@@ -3,8 +3,11 @@
 #include "vector.hpp"
 #include <list>
 #include "list.hpp"
+#include "deque.hpp"
 #include <math.h>
 #include <algorithm>
+#include "deque.hpp"
+#include <deque>
 bool single_digit(const int &value)
 {
     return value < 10 ? true : false;
@@ -94,6 +97,45 @@ void compare_lists(const L1 &l1, const L2 &l2, const std::string &label)
     }
     std::cout << "✅ Lists match!\n\n";
 }
+
+// --- --- --- --- DEQUE CONTAINER HELPERS --- --- --- 
+template<typename Dq>
+void print_deque(const Dq &dq, const std::string &dqname)
+{
+    std::cout << dqname << " (size=" << dq.size() << "): ";
+    typename Dq::const_iterator it = dq.begin();
+    while (it != dq.end()) {
+        std::cout << *it << " ";
+        ++it;
+    }
+    std::cout << std::endl;
+}
+
+template<typename dq1, typename dq2>
+void compare_deque(const dq1 &que1, const dq2 &que2, const std::string &label)
+{
+    std::cout << "==> " << label << " <==" << std::endl;
+    print_deque(que1, "std::deque");
+    print_deque(que2, "ft::deque");
+
+    if (que1.size() != que2.size()) {
+        std::cout << "❌ Size mismatch" << std::endl;
+        return;
+    }
+
+    typename dq1::const_iterator it1 = que1.begin();
+    typename dq2::const_iterator it2 = que2.begin();
+    while (it1 != que1.end() && it2 != que2.end()) {
+        if (*it1 != *it2) {
+            std::cout << "❌ Mismatch: std=" << *it1 << ", ft=" << *it2 << std::endl;
+            return;
+        }
+        ++it1;
+        ++it2;
+    }
+    std::cout << "✅ Deques match" << std::endl;
+}
+
 
 int main()
 {
@@ -446,6 +488,20 @@ int main()
     ft_l1.reverse();
      compare_lists(std_l1, ft_l1, "reverse two list after sort");
 
-    std::cout << "\n===== TESTS COMPLETE =====\n";
+    std::cout << "\n===== TESTS LIST CONTAINER COMPLETE =====\n";
+    std::cout << "\n===== TESTS DEQUE =====\n";
+
+    std::deque<int> second (4,100);
+    std::deque<int> newd(second.begin(), second.end());
+    
+    std::deque<int>::iterator it = newd.begin();
+    while (it != newd.end()){
+        std::cout << *it << " "  ;
+        it++;
+    }
+    std::cout << std::endl;
+    ft::deque<int> ftd(second.begin(), second.end());
+    compare_deque(newd, ftd, "compare two deque");
+    std::cout << "\n===== TESTS DEQUE CONTAINER COMPLETE =====\n";
     return 0;
 }
